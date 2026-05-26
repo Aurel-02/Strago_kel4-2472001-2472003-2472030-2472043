@@ -1,3 +1,5 @@
+from graph import build_adjacency_matrix, NUM_NODES, EDGES, NODE_NAMES
+
 def dijkstra_all_nodes(graph_matrix, start_node):
     n = len(graph_matrix)
     
@@ -37,9 +39,7 @@ def dijkstra_all_nodes(graph_matrix, start_node):
     return L, previous_nodes
 
 def get_shortest_path_and_distance(graph_matrix, start_node, target_node):
-    """
-    Mendapatkan rute terpendek dan total jarak dari start_node ke target_node.
-    """
+
     distances, previous_nodes = dijkstra_all_nodes(graph_matrix, start_node)
     
     # Jika tidak ada jalur ke tujuan
@@ -54,3 +54,22 @@ def get_shortest_path_and_distance(graph_matrix, start_node, target_node):
         current = previous_nodes[current]
         
     return path, distances[target_node]
+
+if __name__ == "__main__":
+    matrix = build_adjacency_matrix(NUM_NODES, EDGES)
+    
+    start_node = 0  # Gudang Pusat
+    target_node = 23 # Hub Selatan
+    
+    print(f"--- Pengujian Algoritma Dijkstra ---")
+    print(f"Mencari jalur terpendek dari '{NODE_NAMES[start_node]}' ke '{NODE_NAMES[target_node]}'")
+    
+    path, dist = get_shortest_path_and_distance(matrix, start_node, target_node)
+    
+    if dist != float('inf'):
+        path_names = [NODE_NAMES[n] for n in path]
+        print(f"\nJalur yang ditemukan:")
+        print(" -> ".join(path_names))
+        print(f"Total Jarak: {dist}")
+    else:
+        print(f"\nTidak ditemukan jalur dari {NODE_NAMES[start_node]} ke {NODE_NAMES[target_node]}")
