@@ -69,38 +69,17 @@ EDGES = [
 
 # Membuat matriks ketetanggaan 24x24 dari daftar edge
 def build_adjacency_matrix(num_nodes: int, edges: list) -> list[list[int]]:
-    """
-    Membangun matriks ketetanggaan dari daftar edge.
-
-    Parameter:
-        num_nodes (int) : jumlah node dalam graf
-        edges (list)    : list of tuple (u, v, weight) — tidak berarah
-
-    Return:
-        matrix (list of list of int) : matriks ketetanggaan berukuran num_nodes × num_nodes
-    """
-    # Inisialisasi semua nilai dengan 0 (tidak ada koneksi)
     matrix = [[0] * num_nodes for _ in range(num_nodes)]
 
     for u, v, weight in edges:
         matrix[u][v] = weight  # arah u → v
-        matrix[v][u] = weight  # arah v → u (graf tidak berarah)
+        matrix[v][u] = weight  # arah v → u 
 
     return matrix
 
 
 # Mengambil daftar tetangga langsung suatu node beserta bobotnya
 def get_neighbors(matrix: list[list[int]], node: int) -> list[tuple[int, int]]:
-    """
-    Mengembalikan daftar tetangga langsung dari sebuah node beserta bobotnya.
-
-    Parameter:
-        matrix (list of list) : matriks ketetanggaan
-        node (int)            : index node yang ingin dicari tetangganya
-
-    Return:
-        list of (neighbor_index, weight)
-    """
     neighbors = []
     for j, weight in enumerate(matrix[node]):
         if weight > 0:
@@ -110,9 +89,6 @@ def get_neighbors(matrix: list[list[int]], node: int) -> list[tuple[int, int]]:
 
 # Mencetak matriks ketetanggaan ke konsol dalam bentuk tabel
 def print_adjacency_matrix(matrix: list[list[int]]) -> None:
-    """
-    Menampilkan matriks ketetanggaan ke konsol dalam format tabel sederhana.
-    """
     n = len(matrix)
     # Header kolom
     header = "     " + "  ".join(f"{j:>3}" for j in range(n))
@@ -126,9 +102,6 @@ def print_adjacency_matrix(matrix: list[list[int]]) -> None:
 
 # Mencetak daftar edge beserta nama node asal dan tujuannya
 def print_edge_list(edges: list) -> None:
-    """
-    Menampilkan daftar edge beserta nama node-nya.
-    """
     print(f"{'No':<4} {'Dari':<18} {'Ke':<18} {'Jarak':>6}")
     print("-" * 50)
     for i, (u, v, w) in enumerate(edges, start=1):
@@ -138,9 +111,6 @@ def print_edge_list(edges: list) -> None:
 
 # Mengembalikan ringkasan statistik graf (jumlah node, edge, total bobot)
 def get_graph_info(matrix: list[list[int]], edges: list) -> dict:
-    """
-    Mengembalikan ringkasan informasi graf.
-    """
     total_weight = sum(w for _, _, w in edges)
     return {
         "jumlah_node": NUM_NODES,
@@ -152,9 +122,9 @@ def get_graph_info(matrix: list[list[int]], edges: list) -> dict:
 if __name__ == "__main__":
     adjacency_matrix = build_adjacency_matrix(NUM_NODES, EDGES)
 
-    print("=" * 60)
-    print("  ROUTEPACK COURIER -- Graf 24 Node (Anggota 1)")
-    print("=" * 60)
+    print("=" * 30)
+    print("  ROUTEPACK COURIER ")
+    print("=" * 30)
 
     info = get_graph_info(adjacency_matrix, EDGES)
     print("\n[INFO] Informasi Graf:")
