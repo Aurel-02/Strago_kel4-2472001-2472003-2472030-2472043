@@ -1,158 +1,95 @@
-NODE_NAMES = [
-    "Gudang Pusat",
-    "Agen Barat",
-    "Agen Utara",
-    "Agen Timur",
-    "Agen Selatan",
-    "Pasar Lama",
-    "Pasar Baru",
-    "Mall Kota",
-    "Kampus",
-    "Sekolah",
-    "Rumah Sakit",
-    "Perumahan A",
-    "Perumahan B",
-    "Perumahan C",
-    "Apartemen A",
-    "Apartemen B",
-    "Ruko A",
-    "Ruko B",
-    "Terminal",
-    "Stasiun",
-    "Pabrik",
-    "Kantor Pos",
-    "Gudang Cabang",
-    "Hub Selatan",
-]
+from data import NODE_NAMES, DEFAULT_EDGES
 
-NUM_NODES = len(NODE_NAMES)  # = 24
+NUM_NODES = len(NODE_NAMES)
+EDGES = DEFAULT_EDGES
 
-EDGES = [
-    (0, 1, 4),
-    (0, 2, 5),
-    (0, 4, 6),
-    (1, 5, 3),
-    (1, 11, 5),
-    (2, 6, 4),
-    (2, 8, 6),
-    (3, 7, 4),
-    (3, 16, 5),
-    (3, 22, 9),
-    (4, 18, 4),
-    (4, 23, 7),
-    (5, 6, 3),
-    (5, 12, 6),
-    (6, 7, 4),
-    (6, 9, 5),
-    (7, 8, 3),
-    (7, 14, 6),
-    (8, 9, 4),
-    (8, 10, 5),
-    (9, 13, 5),
-    (10, 15, 4),
-    (10, 17, 7),
-    (11, 12, 3),
-    (11, 19, 8),
-    (12, 13, 4),
-    (13, 14, 5),
-    (14, 15, 3),
-    (15, 16, 4),
-    (16, 17, 3),
-    (17, 18, 5),
-    (18, 19, 4),
-    (19, 20, 6),
-    (20, 21, 5),
-    (21, 22, 4),
-    (22, 23, 5),
-]
-
-
-# Membuat matriks ketetanggaan 24x24 dari daftar edge
-def build_adjacency_matrix(num_nodes: int, edges: list) -> list[list[int]]:
-    matrix = [[0] * num_nodes for _ in range(num_nodes)]
-
-    for u, v, weight in edges:
-        matrix[u][v] = weight  # arah u → v
-        matrix[v][u] = weight  # arah v → u 
-
+def build_adjacency_matrix(num_nodes, edges):
+    matrix = [[0 for _ in range(num_nodes)] for _ in range(num_nodes)]
+    for start, end, weight in edges:
+        if (start == end):
+            continue
+        if (weight <= 0):
+            continue
+        matrix[start][end] = weight
+        matrix[end][start] = weight
     return matrix
 
-
-# Mengambil daftar tetangga langsung suatu node beserta bobotnya
-def get_neighbors(matrix: list[list[int]], node: int) -> list[tuple[int, int]]:
+def get_neighbors(matrix, node):
     neighbors = []
-    for j, weight in enumerate(matrix[node]):
-        if weight > 0:
-            neighbors.append((j, weight))
+    for neighbor, weight in enumerate(matrix[node]):
+        if (weight > 0):
+            neighbors.append((neighbor, weight))
     return neighbors
 
+def get_graph_info(edges=None):
+    if (edges is None):
+        edges = EDGES
+    total_weight = sum(weight for _, _, weight in edges)
 
-# Mencetak matriks ketetanggaan ke konsol dalam bentuk tabel
-def print_adjacency_matrix(matrix: list[list[int]]) -> None:
-    n = len(matrix)
-    # Header kolom
-    header = "     " + "  ".join(f"{j:>3}" for j in range(n))
-    print(header)
-    print("     " + "-" * (n * 5))
-
-    for i, row in enumerate(matrix):
-        row_str = "  ".join(f"{val:>3}" for val in row)
-        print(f"{i:>3} | {row_str}")
-
-
-# Mencetak daftar edge beserta nama node asal dan tujuannya
-def print_edge_list(edges: list) -> None:
-    print(f"{'No':<4} {'Dari':<18} {'Ke':<18} {'Jarak':>6}")
-    print("-" * 50)
-    for i, (u, v, w) in enumerate(edges, start=1):
-        print(f"{i:<4} {NODE_NAMES[u]:<18} {NODE_NAMES[v]:<18} {w:>6}")
-    print(f"\nTotal edge: {len(edges)}")
-
-
-# Mengembalikan ringkasan statistik graf (jumlah node, edge, total bobot)
-def get_graph_info(matrix: list[list[int]], edges: list) -> dict:
-    total_weight = sum(w for _, _, w in edges)
     return {
         "jumlah_node": NUM_NODES,
         "jumlah_edge": len(edges),
         "total_bobot": total_weight,
-        "rata_rata_bobot": round(total_weight / len(edges), 2),
+        "rata_rata_bobot": round(total_weight / len(edges), 2) if edges else 0
     }
 
+def route_to_text(route):
+    return " -> ".join(NODE_NAMES[node] for node in route)
+
+def full_graph_to_dot(edges):
+    lines = [
+        "graph G {",
+        "layout=dot;",
+        "rankdir=LR;",
+        'node [shape=box, style="rounded,filled", fillcolor="#EAF2FF", color="#0259DD", fontname="Arial", fontsize=10];',
+        'edge [color="#84AFFB", fontname="Arial", fontsize=9];'
+    ]
+
+    for start, end, weight in edges:
+        start_name = NODE_NAMES[start]
+        end_name = NODE_NAMES[end]
+        lines.append(
+            f'"{start_name}" -- "{end_name}" [label="{weight}"];'
+        )
+    lines.append("}")
+    return "\n".join(lines)
+
+def route_to_dot(route):
+    if (len(route) <= 1):
+        return "digraph G { }"
+    
+    lines = [
+        "digraph G {",
+        "rankdir=LR;",
+        'node [shape=box, style="rounded,filled", fillcolor="#FFE1D7", color="#0259DD", fontname="Arial"];',
+        'edge [color="#FF6648", penwidth=2, fontname="Arial"];'
+    ]
+
+    for index, node in enumerate(route):
+        node_id = f"step_{index}"
+        node_name = NODE_NAMES[node]
+        lines.append(
+            f'{node_id} [label="{index}. {node_name}"];'
+        )
+
+    for index in range(len(route) - 1):
+        lines.append(
+            f"step_{index} -> step_{index + 1};"
+        )
+
+    lines.append("}")
+    return "\n".join(lines)
+
 if __name__ == "__main__":
-    adjacency_matrix = build_adjacency_matrix(NUM_NODES, EDGES)
+    matrix = build_adjacency_matrix(NUM_NODES, EDGES)
+    info = get_graph_info(EDGES)
 
-    print("=" * 30)
-    print("  ROUTEPACK COURIER ")
-    print("=" * 30)
+    print("Informasi Graf RouteWise")
+    print(f"Jumlah node : {info['jumlah_node']}")
+    print(f"Jumlah edge : {info['jumlah_edge']}")
+    print(f"Total bobot : {info['total_bobot']}")
+    print(f"Rata-rata   : {info['rata_rata_bobot']}")
 
-    info = get_graph_info(adjacency_matrix, EDGES)
-    print("\n[INFO] Informasi Graf:")
-    print(f"   Jumlah node : {info['jumlah_node']}")
-    print(f"   Jumlah edge : {info['jumlah_edge']}")
-    print(f"   Total bobot : {info['total_bobot']}")
-    print(f"   Rata-rata   : {info['rata_rata_bobot']}")
-
-    # Daftar node
-    print("\n[NODE] Daftar Node:")
-    for i, name in enumerate(NODE_NAMES):
-        print(f"   [{i:>2}] {name}")
-
-    # Daftar edge
-    print("\n[EDGE] Daftar Edge:")
-    print_edge_list(EDGES)
-
-    print("\n[GRAF] Tetangga 'Gudang Pusat' (node 0):")
-    for neighbor, weight in get_neighbors(adjacency_matrix, 0):
-        print(f"   -> {NODE_NAMES[neighbor]:<18} jarak: {weight}")
-
-    print("\n[MATRIX] Cuplikan Matriks Ketetanggaan (8 baris pertama):")
-    sub = [row[:8] for row in adjacency_matrix[:8]]
-    print("     " + "  ".join(f"{j:>3}" for j in range(8)))
-    print("     " + "-" * 42)
-    for i, row in enumerate(sub):
-        row_str = "  ".join(f"{val:>3}" for val in row)
-        print(f"{i:>3} | {row_str}")
-
-    print("\n[OK] Graf berhasil dibuat dan divalidasi.")
-    print("     File ini siap diimpor oleh dijkstra.py, greedy.py, dan main.py")
+    print("\nTetangga Gudang Pusat:")
+    for neighbor, weight in get_neighbors(matrix, 0):
+        print(f"- {NODE_NAMES[neighbor]} ({weight})")

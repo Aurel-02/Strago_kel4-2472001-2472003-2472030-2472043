@@ -1,24 +1,18 @@
 class Kendaraan:
-
-    def __init__(self, nama, kapasitas, biaya_per_km):
+    def __init__(self, jenis, nama, kapasitas, biaya_per_km):
+        self.jenis = jenis
         self.nama = nama
         self.kapasitas = kapasitas
         self.biaya_per_km = biaya_per_km
 
     def tampilkan_info(self):
+        print(f"Jenis Kendaraan : {self.jenis}")
+        print(f"Nama Kendaraan  : {self.nama}")
+        print(f"Kapasitas       : {self.kapasitas} unit")
+        print(f"Biaya per KM    : Rp{self.biaya_per_km}")
 
-        print(f"Nama Kendaraan : {self.nama}")
-        print(f"Kapasitas      : {self.kapasitas} kg")
-        print(f"Biaya per KM   : Rp{self.biaya_per_km}")
-
-
-# DATA KENDARAAN
 daftar_kendaraan = [
-
-    Kendaraan("Motor", 5, 2000),
-
-    Kendaraan("Mobil Van", 20, 5000),
-
-    Kendaraan("Truck", 50, 10000)
-
+    Kendaraan("Motor", "Motor Kurir Swift", 60, 2000),
+    Kendaraan("Mobil Box", "BoxVan Cargo Lite", 250, 5000),
+    Kendaraan("Truk", "Truk Logistik HeavyMove", 500, 8000)
 ]
