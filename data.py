@@ -1,8 +1,5 @@
 # Seed data untuk aplikasi RouteWise.
 
-# File ini berfungsi sebagai pengganti database sementara.
-# Data kendaraan, node, edge, dan paket disimpan dalam bentuk list/dictionary
-
 VEHICLES = {
     "Motor": {
         "capacity": 60,
