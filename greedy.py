@@ -2,7 +2,6 @@ from dijkstra import get_shortest_path_and_distance
 
 
 def seleksi_greedy(total_berat, daftar_kendaraan):
-    # Mengurutkan kendaraan dari kapasitas terkecil agar kendaraan yang dipilih paling efisien
     kendaraan_urut = sorted(
         daftar_kendaraan,
         key=lambda kendaraan: kendaraan.kapasitas
@@ -28,6 +27,13 @@ def merge_path(route, new_path):
     return route + new_path
 
 
+def path_to_text(path, node_names):
+    if not path:
+        return "Tidak ada rute"
+
+    return " -> ".join(node_names[node] for node in path)
+
+
 def calculate_route_for_order(matrix, ordered_packages, node_names, start_node=0):
     current_node = start_node
     total_distance = 0
@@ -36,6 +42,8 @@ def calculate_route_for_order(matrix, ordered_packages, node_names, start_node=0
     failed_rows = []
 
     for index, package in enumerate(ordered_packages, start=1):
+        previous_position = current_node
+
         path_to_origin, distance_to_origin = get_shortest_path_and_distance(
             matrix,
             current_node,
@@ -48,7 +56,10 @@ def calculate_route_for_order(matrix, ordered_packages, node_names, start_node=0
             package["destination"]
         )
 
-        if distance_to_origin == float("inf") or distance_to_destination == float("inf"):
+        if (
+            distance_to_origin == float("inf")
+            or distance_to_destination == float("inf")
+        ):
             failed_rows.append({
                 "ID Paket": package["id"],
                 "Asal": node_names[package["origin"]],
@@ -63,13 +74,25 @@ def calculate_route_for_order(matrix, ordered_packages, node_names, start_node=0
         full_route = merge_path(full_route, path_to_origin)
         full_route = merge_path(full_route, path_to_destination)
 
-        deadline_status = "Memenuhi" if total_distance <= package["deadline"] else "Melewati deadline"
+        deadline_status = (
+            "Memenuhi"
+            if total_distance <= package["deadline"]
+            else "Melewati deadline"
+        )
 
         delivery_rows.append({
             "Urutan": index,
             "ID Paket": package["id"],
+            "Posisi Awal": node_names[previous_position],
             "Asal": node_names[package["origin"]],
             "Tujuan": node_names[package["destination"]],
+            "Rute Dijkstra ke Asal": path_to_text(path_to_origin, node_names),
+            "Jarak ke Asal": distance_to_origin,
+            "Rute Dijkstra ke Tujuan": path_to_text(
+                path_to_destination,
+                node_names
+            ),
+            "Jarak ke Tujuan": distance_to_destination,
             "Prioritas": package["priority"],
             "Volume": package["volume"],
             "Deadline": package["deadline"],
@@ -88,6 +111,77 @@ def calculate_route_for_order(matrix, ordered_packages, node_names, start_node=0
     }
 
 
+def build_greedy_candidates(
+    matrix,
+    remaining_packages,
+    node_names,
+    current_node,
+    max_priority,
+    max_deadline
+):
+    candidates = []
+
+    for package in remaining_packages:
+        path_to_origin, distance_to_origin = get_shortest_path_and_distance(
+            matrix,
+            current_node,
+            package["origin"]
+        )
+
+        path_to_destination, distance_to_destination = (
+            get_shortest_path_and_distance(
+                matrix,
+                package["origin"],
+                package["destination"]
+            )
+        )
+
+        if (
+            distance_to_origin == float("inf")
+            or distance_to_destination == float("inf")
+        ):
+            continue
+
+        added_distance = distance_to_origin + distance_to_destination
+
+        priority_score = package["priority"] / max_priority
+        distance_score = 1 / (1 + added_distance)
+        deadline_score = (
+            (max_deadline - package["deadline"] + 1)
+            / max_deadline
+        )
+
+        score = (
+            0.55 * priority_score
+            + 0.30 * distance_score
+            + 0.15 * deadline_score
+        )
+
+        candidates.append({
+            "package": package,
+            "path_to_origin": path_to_origin,
+            "distance_to_origin": distance_to_origin,
+            "path_to_destination": path_to_destination,
+            "distance_to_destination": distance_to_destination,
+            "added_distance": added_distance,
+            "priority_score": priority_score,
+            "distance_score": distance_score,
+            "deadline_score": deadline_score,
+            "score": score
+        })
+
+    candidates.sort(
+        reverse=True,
+        key=lambda item: (
+            item["score"],
+            -item["added_distance"],
+            -item["package"]["deadline"]
+        )
+    )
+
+    return candidates
+
+
 def greedy_order(matrix, packages, node_names, start_node=0):
     if not packages:
         return []
@@ -100,49 +194,89 @@ def greedy_order(matrix, packages, node_names, start_node=0):
     max_deadline = max(package["deadline"] for package in packages)
 
     while remaining:
-        candidates = []
-
-        for package in remaining:
-            _, distance_to_origin = get_shortest_path_and_distance(
-                matrix,
-                current_node,
-                package["origin"]
-            )
-
-            _, distance_to_destination = get_shortest_path_and_distance(
-                matrix,
-                package["origin"],
-                package["destination"]
-            )
-
-            if distance_to_origin == float("inf") or distance_to_destination == float("inf"):
-                continue
-
-            added_distance = distance_to_origin + distance_to_destination
-
-            priority_score = package["priority"] / max_priority
-            distance_score = 1 / (1 + added_distance)
-            deadline_score = (max_deadline - package["deadline"] + 1) / max_deadline
-
-            score = (
-                0.55 * priority_score
-                + 0.30 * distance_score
-                + 0.15 * deadline_score
-            )
-
-            candidates.append((score, -added_distance, -package["deadline"], package))
+        candidates = build_greedy_candidates(
+            matrix,
+            remaining,
+            node_names,
+            current_node,
+            max_priority,
+            max_deadline
+        )
 
         if not candidates:
             break
 
-        candidates.sort(reverse=True, key=lambda item: (item[0], item[1], item[2]))
-        best_package = candidates[0][3]
+        best_package = candidates[0]["package"]
 
         ordered.append(best_package)
         current_node = best_package["destination"]
         remaining.remove(best_package)
 
     return ordered
+
+
+def get_candidate_ranking(matrix, packages, node_names, start_node=0):
+    if not packages:
+        return []
+
+    remaining = packages[:]
+    current_node = start_node
+    ranking_rows = []
+
+    max_priority = max(package["priority"] for package in packages)
+    max_deadline = max(package["deadline"] for package in packages)
+
+    step = 1
+
+    while remaining:
+        candidates = build_greedy_candidates(
+            matrix,
+            remaining,
+            node_names,
+            current_node,
+            max_priority,
+            max_deadline
+        )
+
+        if not candidates:
+            break
+
+        for rank, candidate in enumerate(candidates, start=1):
+            package = candidate["package"]
+
+            ranking_rows.append({
+                "Langkah": step,
+                "Ranking": rank,
+                "Dipilih": "Ya" if rank == 1 else "Tidak",
+                "Posisi Kurir": node_names[current_node],
+                "ID Paket": package["id"],
+                "Asal": node_names[package["origin"]],
+                "Tujuan": node_names[package["destination"]],
+                "Rute ke Asal": path_to_text(
+                    candidate["path_to_origin"],
+                    node_names
+                ),
+                "Jarak ke Asal": candidate["distance_to_origin"],
+                "Rute ke Tujuan": path_to_text(
+                    candidate["path_to_destination"],
+                    node_names
+                ),
+                "Jarak ke Tujuan": candidate["distance_to_destination"],
+                "Total Jarak Tambahan": candidate["added_distance"],
+                "Prioritas": package["priority"],
+                "Deadline": package["deadline"],
+                "Priority Score": round(candidate["priority_score"], 3),
+                "Distance Score": round(candidate["distance_score"], 3),
+                "Deadline Score": round(candidate["deadline_score"], 3),
+                "Score Akhir": round(candidate["score"], 4)
+            })
+
+        best_package = candidates[0]["package"]
+        current_node = best_package["destination"]
+        remaining.remove(best_package)
+        step += 1
+
+    return ranking_rows
 
 
 def priority_order(packages):
@@ -189,7 +323,9 @@ def distance_based_order(matrix, packages, start_node=0):
                 package["destination"]
             )
 
-            added_distance = distance_to_origin + distance_to_destination
+            added_distance = (
+                distance_to_origin + distance_to_destination
+            )
 
             if added_distance < best_distance:
                 best_distance = added_distance
@@ -211,7 +347,12 @@ def get_route_alternatives(matrix, selected_packages, start_node=0):
     alternatives = [
         (
             "Greedy gabungan priority + jarak + deadline",
-            greedy_order(matrix, selected_packages, NODE_NAMES, start_node)
+            greedy_order(
+                matrix,
+                selected_packages,
+                NODE_NAMES,
+                start_node
+            )
         ),
         (
             "Prioritas tertinggi dulu",
@@ -223,7 +364,11 @@ def get_route_alternatives(matrix, selected_packages, start_node=0):
         ),
         (
             "Jarak terdekat bertahap",
-            distance_based_order(matrix, selected_packages, start_node)
+            distance_based_order(
+                matrix,
+                selected_packages,
+                start_node
+            )
         ),
     ]
 
