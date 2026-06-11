@@ -119,8 +119,9 @@ def route_to_dot(route):
     lines = [
         "digraph G {",
         "rankdir=LR;",
-        'node [shape=box, style="rounded,filled", fillcolor="#FFE1D7", color="#0259DD", fontname="Arial"];',
-        'edge [color="#FF6648", penwidth=2, fontname="Arial"];'
+        'graph [ranksep="0.8"];',
+        'node [shape=box, style="rounded,filled", fillcolor="#FFE1D7", color="#0259DD", fontname="Arial", fontsize=18, margin="0.4,0.2"];',
+        'edge [color="#FF6648", penwidth=3, fontname="Arial"];'
     ]
 
     for index, node in enumerate(route):
@@ -148,7 +149,8 @@ def route_to_dot_partial(route, active_step):
     lines = [
         "digraph G {",
         "rankdir=LR;",
-        'node [shape=box, style="rounded,filled", color="#0259DD", fontname="Arial"];',
+        'graph [ranksep="0.8"];',
+        'node [shape=box, style="rounded,filled", color="#0259DD", fontname="Arial", fontsize=18, margin="0.4,0.2"];',
         'edge [fontname="Arial"];'
     ]
 

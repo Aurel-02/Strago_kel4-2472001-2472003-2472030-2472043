@@ -1,3 +1,4 @@
+import streamlit.components.v1 as components
 import pandas as pd
 import streamlit as st
 
@@ -12,6 +13,51 @@ from graph import (
     route_to_text
 )
 from greedy import get_route_alternatives, get_best_route
+
+def render_route_html(route):
+    if not route:
+        return
+    
+    html = '<div style="display: flex; flex-direction: row; overflow-x: auto; padding: 20px 10px; gap: 12px; align-items: center; background: linear-gradient(135deg, #FFF7F4 0%, #EAF2FF 100%); border-radius: 16px; min-height: 90px;">'
+    
+    for i, node in enumerate(route):
+        node_name = NODE_NAMES[node]
+        html += f'<div style="min-width: 140px; text-align: center; padding: 14px 18px; background-color: #FFE1D7; border: 2px solid #0259DD; border-radius: 12px; font-family: Arial, sans-serif; font-size: 15px; font-weight: bold; color: #0259DD; white-space: nowrap; box-shadow: 0 4px 8px rgba(2,89,221,0.12); flex-shrink: 0;">{i}. {node_name}</div>'
+        if i < len(route) - 1:
+            html += '<div style="font-size: 26px; font-weight: bold; color: #FF6648; flex-shrink: 0;">&#8594;</div>'
+            
+    html += '</div>'
+    components.html(html, height=140, scrolling=False)
+
+def render_route_html_partial(route, active_step):
+    if not route:
+        return
+    
+    html = '<div style="display: flex; flex-direction: row; overflow-x: auto; padding: 20px 10px; gap: 12px; align-items: center; background: linear-gradient(135deg, #FFF7F4 0%, #EAF2FF 100%); border-radius: 16px; min-height: 90px;">'
+    
+    for i, node in enumerate(route):
+        node_name = NODE_NAMES[node]
+        
+        if i < active_step:
+            bg_color = "#EAF2FF"
+            border_color = "#0259DD"
+            text_color = "#0259DD"
+        elif i == active_step:
+            bg_color = "#FFE1D7"
+            border_color = "#FF6648"
+            text_color = "#0259DD"
+        else:
+            bg_color = "#F8FAFC"
+            border_color = "#CBD5E1"
+            text_color = "#334155"
+            
+        html += f'<div style="min-width: 140px; text-align: center; padding: 14px 18px; background-color: {bg_color}; border: 2px solid {border_color}; border-radius: 12px; font-family: Arial, sans-serif; font-size: 15px; font-weight: bold; color: {text_color}; white-space: nowrap; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08); flex-shrink: 0;">{i}. {node_name}</div>'
+        if i < len(route) - 1:
+            arr_color = "#FF6648" if i < active_step else "#CBD5E1"
+            html += f'<div style="font-size: 26px; font-weight: bold; color: {arr_color}; flex-shrink: 0;">&#8594;</div>'
+            
+    html += '</div>'
+    components.html(html, height=140, scrolling=False)
 
 def copy_default_packages():
     copied_packages = []
@@ -144,6 +190,18 @@ def setup_page():
         [data-testid="stMetricValue"] {
             color: var(--strong-blue);
             font-weight: 800;
+        }
+
+        [data-testid="stGraphVizChart"] svg {
+            max-width: none !important;
+            width: auto !important;
+            height: auto !important;
+        }
+        
+        [data-testid="stGraphVizChart"] {
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            padding-bottom: 10px;
         }
         </style>
         """,
@@ -666,7 +724,7 @@ def render_result_page(vehicle, vehicle_name, capacity, start_node):
     st.write(route_to_text(best_route["result"]["route"]))
 
     st.subheader("Peta Rute Rekomendasi")
-    st.graphviz_chart(route_to_dot(best_route["result"]["route"]), use_container_width=True)
+    render_route_html(best_route["result"]["route"])
 
     st.subheader("Route Replay / Simulasi Perjalanan Kurir")
     route = best_route["result"]["route"]
@@ -699,7 +757,7 @@ def render_result_page(vehicle, vehicle_name, capacity, start_node):
             unsafe_allow_html=True
         )
 
-        st.graphviz_chart(route_to_dot_partial(route, active_step), use_container_width=True)
+        render_route_html_partial(route, active_step)
     else:
         st.info("Route replay belum bisa ditampilkan karena rute hanya berisi satu node.")
 
@@ -1121,16 +1179,16 @@ def render_dynamic_reroute_page(vehicle, vehicle_name, capacity, start_node):
 
     st.dataframe(pd.DataFrame(comparison_rows), use_container_width=True)
 
-    left_col, right_col = st.columns(2)
-
-    with left_col:
+    with st.container():
         st.subheader("Graf Sebelum Jalan Ditutup")
         st.graphviz_chart(
             graph_with_route_to_dot(current_edges, normal_route, closed_edge),
             use_container_width=True
         )
 
-    with right_col:
+    st.divider()
+
+    with st.container():
         st.subheader("Graf Setelah Dijkstra Hitung Ulang")
         st.graphviz_chart(
             graph_with_route_to_dot(current_edges, simulated_route, closed_edge),
