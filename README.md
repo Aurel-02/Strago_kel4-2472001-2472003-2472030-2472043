@@ -1,4 +1,4 @@
-# Strago - RouteWise
+# Strategi Algoritmik - RouteWise
 
 RouteWise adalah aplikasi rekomendasi rute pengiriman paket menggunakan algoritma Dijkstra dan strategi Greedy. Aplikasi ini membantu menentukan rute pengiriman berdasarkan graf berbobot, daftar paket, kapasitas kendaraan, prioritas, volume, dan deadline.
 
